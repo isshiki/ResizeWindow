@@ -57,7 +57,7 @@
             this.Label2.AutoSize = true;
             this.Label2.Location = new System.Drawing.Point(137, 22);
             this.Label2.Name = "Label2";
-            this.Label2.Size = new System.Drawing.Size(43, 12);
+            this.Label2.Size = new System.Drawing.Size(40, 12);
             this.Label2.TabIndex = 2;
             this.Label2.Text = "&Height:";
             // 
@@ -74,7 +74,7 @@
             this.Label1.AutoSize = true;
             this.Label1.Location = new System.Drawing.Point(11, 22);
             this.Label1.Name = "Label1";
-            this.Label1.Size = new System.Drawing.Size(36, 12);
+            this.Label1.Size = new System.Drawing.Size(35, 12);
             this.Label1.TabIndex = 0;
             this.Label1.Text = "&Width:";
             // 
@@ -101,7 +101,7 @@
             this.groupBox1.Size = new System.Drawing.Size(509, 322);
             this.groupBox1.TabIndex = 1;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Select target &window to resize";
+            this.groupBox1.Text = "Select a target &window to resize";
             // 
             // listBoxSelectedWindow
             // 
@@ -140,7 +140,7 @@
             this.MaximizeBox = false;
             this.Name = "MainWindow";
             this.ShowInTaskbar = false;
-            this.Text = "Resize application's window";
+            this.Text = "Resize application\'s window";
             this.TopMost = true;
             this.GroupBox2.ResumeLayout(false);
             this.GroupBox2.PerformLayout();

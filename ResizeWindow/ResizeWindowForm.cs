@@ -111,21 +111,21 @@ namespace ResizeWindow
 
             int iWidth;
             if (!int.TryParse(this.txtWidth.Text, out iWidth) || (iWidth < left | iWidth > width)) {
-                MessageBox.Show("正しい幅を入力してください");
+                MessageBox.Show("Please input correct width.");
                 this.txtWidth.Focus();
                 return;
             }
 
             int iHeight;
             if (!int.TryParse(this.txtHeight.Text, out iHeight) || (iHeight < top | iHeight > height)) {
-                    MessageBox.Show("正しい高さを入力してください");
+                MessageBox.Show("Please input correct height.");
                     this.txtHeight.Focus();
                     return;
             }
 
             string sel = (string)this.listBoxSelectedWindow.SelectedItem;
             if (String.IsNullOrEmpty(sel)) {
-                MessageBox.Show("サイズ変更対象のウィンドウを選択してください");
+                MessageBox.Show("Please select the target window to resize.");
                 this.listBoxSelectedWindow.Focus();
                 return;
             }
@@ -134,8 +134,8 @@ namespace ResizeWindow
                 var hWndTarget = activeWindow[sel];
                 MainWindow.SetWindowPos(hWndTarget, IntPtr.Zero, 0, 0, iWidth, iHeight, 2);
             }
-            catch (Exception) {
-                MessageBox.Show("サイズ変更対象のウィンドウを選択してください");
+            catch (Exception ex) {
+                MessageBox.Show("[Error] Cannot resize window.\n\n" + ex.Message);
                 GetAllActiveWindow();
                 return;
             }
