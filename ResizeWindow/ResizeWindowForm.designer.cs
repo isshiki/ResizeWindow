@@ -140,7 +140,7 @@
             this.MaximizeBox = false;
             this.Name = "MainWindow";
             this.ShowInTaskbar = false;
-            this.Text = "Resize application\'s window";
+            this.Text = "Application\'s Window Resizer";
             this.TopMost = true;
             this.GroupBox2.ResumeLayout(false);
             this.GroupBox2.PerformLayout();
