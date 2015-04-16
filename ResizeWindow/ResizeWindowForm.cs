@@ -23,10 +23,12 @@ namespace ResizeWindow
             GetAllActiveWindow();
         }
 
+        #region Win32APIs        
+
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
         [DllImport("user32.dll", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+        private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
@@ -41,13 +43,35 @@ namespace ResizeWindow
         private static readonly UInt64 DESIRED_WS = WS_BORDER | WS_VISIBLE;
 
         [DllImport("user32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool IsWindowVisible(IntPtr hWnd);
-        
+
         [DllImport("user32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         private static extern IntPtr SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, int wFlags);
 
         [DllImport("user32", CharSet = CharSet.Ansi, ExactSpelling = true, SetLastError = true)]
         private static extern UInt32 GetWindowThreadProcessId(IntPtr hWnd, out Int32 lpdwProcessId);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetAncestor(IntPtr hWnd, UInt32 gaFlags);
+        private static readonly UInt32 GA_ROOTOWNER = 3;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetLastActivePopup(IntPtr hWnd);
+
+        #endregion
 
         private static Int32 GetWindowProcessID(IntPtr hwnd)
         {
@@ -78,27 +102,63 @@ namespace ResizeWindow
                 }
             }
 
-            return appname + (String.IsNullOrEmpty(captitle) ? "" : (" ｜ " + captitle));          
+            return String.Format("{0,-15} [{1:D7}]", appname, (int)hWnd) + (String.IsNullOrEmpty(captitle) ? "" : (" ｜ " + captitle));          
         }
 
         private static Dictionary<string, IntPtr> activeWindow = new Dictionary<string, IntPtr>();
         private static bool EnumerateWindow(IntPtr hWnd, IntPtr lParam)
         {
-            if (IsWindowVisible(hWnd)) {
+            if (IsWindowVisible(hWnd) && IsAltTabWindow(hWnd)) {
                 var appname = GetAppName(hWnd);
-                if ((String.IsNullOrEmpty(appname) == false) && (activeWindow.ContainsKey(appname) == false)) {
-                    activeWindow.Add(appname, hWnd);
+                if (String.IsNullOrEmpty(appname) == false) {
+                    if (activeWindow.ContainsKey(appname) == false) {
+                        activeWindow.Add(appname, hWnd);
+                    }
                 }
             }
             return true;
         }
+
+        private static bool IsAltTabWindow(IntPtr hWnd)
+        {
+            IntPtr hWndWalk = GetAncestor(hWnd, GA_ROOTOWNER);
+
+            IntPtr hWndTry;
+            while ((hWndTry = GetLastActivePopup(hWndWalk)) != hWndTry) {
+                if (IsWindowVisible(hWndTry)) break;
+                hWndWalk = hWndTry;
+            }
+            return hWndWalk == hWnd;
+        }
+
+        private static bool IsEnumeratingWindows = false;
+        private static Object lockObj = new Object();
+
         private void GetAllActiveWindow()
         {
-            activeWindow.Clear();
-            this.listBoxSelectedWindow.Items.Clear();
-            EnumWindows(EnumerateWindow, IntPtr.Zero);
-            foreach (var win in activeWindow) {
-                this.listBoxSelectedWindow.Items.Add(win.Key);
+            if (IsEnumeratingWindows) return;
+            lock (lockObj) {
+                IsEnumeratingWindows = true;
+                var prevActiveWinKeys = this.listBoxSelectedWindow.Items.Cast<string>();
+                activeWindow.Clear();
+                EnumWindows(EnumerateWindow, IntPtr.Zero);
+                var itemsToAdd = activeWindow.Keys.Except(prevActiveWinKeys).ToArray();
+                var itemsToRemove = prevActiveWinKeys.Except(activeWindow.Keys).ToArray();
+                if (itemsToAdd.Count() > 0) {
+                    foreach (var winKey in itemsToAdd) {
+                        if (this.listBoxSelectedWindow.Items.Contains(winKey) == false) {
+                            this.listBoxSelectedWindow.Items.Add(winKey);
+                        }
+                    }
+                }
+                if (itemsToRemove.Count() > 0) {
+                    foreach (var winKey in itemsToRemove) {
+                        if (this.listBoxSelectedWindow.Items.Contains(winKey)) {
+                            this.listBoxSelectedWindow.Items.Remove(winKey);
+                        }
+                    }
+                }
+                IsEnumeratingWindows = false;
             }
         }
 
@@ -123,25 +183,55 @@ namespace ResizeWindow
                     return;
             }
 
-            string sel = (string)this.listBoxSelectedWindow.SelectedItem;
-            if (String.IsNullOrEmpty(sel)) {
-                MessageBox.Show("Please select the target window to resize.");
-                this.listBoxSelectedWindow.Focus();
-                return;
-            }
+            string sel = GetSelectedWindow();
+            if (sel == null) return;
 
             try {
                 var hWndTarget = activeWindow[sel];
                 MainWindow.SetWindowPos(hWndTarget, IntPtr.Zero, 0, 0, iWidth, iHeight, 2);
             }
             catch (Exception ex) {
-                MessageBox.Show("[Error] Cannot resize window.\n\n" + ex.Message);
+                MessageBox.Show("[Error] Cannot resize window.\n\n" + ex.Message, "Error");
                 GetAllActiveWindow();
                 return;
             }
         }
 
-        private void buttonReload_Click(object sender, EventArgs e)
+        private string GetSelectedWindow()
+        {
+            string sel = (string)this.listBoxSelectedWindow.SelectedItem;
+            if (String.IsNullOrEmpty(sel)) {
+                MessageBox.Show("Please select the target window to resize.");
+                this.listBoxSelectedWindow.Focus();
+                return null;
+            }
+            return sel;
+        }
+
+        private void listBoxSelectedWindow_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string sel = GetSelectedWindow();
+            if (sel == null) return;
+
+            try {
+                var hWndTarget = activeWindow[sel];
+                RECT rct;
+                if (!GetWindowRect(hWndTarget, out rct)) {
+                    MessageBox.Show("[Error] Cannot get window size.", "Error");
+                    return;
+                }
+                this.txtWidth.Text = (rct.Right - rct.Left).ToString();
+                this.txtHeight.Text = (rct.Bottom - rct.Top).ToString();
+
+            }
+            catch (Exception ex) {
+                MessageBox.Show("[Error] Cannot get window size.\n\n" + ex.Message, "Error");
+                GetAllActiveWindow();
+                return;
+            }
+        }
+
+        private void timerReload_Tick(object sender, EventArgs e)
         {
             GetAllActiveWindow();
         }

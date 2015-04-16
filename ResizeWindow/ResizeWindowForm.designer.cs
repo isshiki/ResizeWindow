@@ -16,6 +16,7 @@
 
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.GroupBox2 = new System.Windows.Forms.GroupBox();
             this.txtHeight = new System.Windows.Forms.TextBox();
             this.Label2 = new System.Windows.Forms.Label();
@@ -24,7 +25,7 @@
             this.btnResize = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.listBoxSelectedWindow = new System.Windows.Forms.ListBox();
-            this.buttonReload = new System.Windows.Forms.Button();
+            this.timerReload = new System.Windows.Forms.Timer(this.components);
             this.GroupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -108,6 +109,7 @@
             this.listBoxSelectedWindow.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.listBoxSelectedWindow.Font = new System.Drawing.Font("ＭＳ ゴシック", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(128)));
             this.listBoxSelectedWindow.FormattingEnabled = true;
             this.listBoxSelectedWindow.ItemHeight = 12;
             this.listBoxSelectedWindow.Location = new System.Drawing.Point(11, 18);
@@ -116,23 +118,19 @@
             this.listBoxSelectedWindow.Size = new System.Drawing.Size(492, 292);
             this.listBoxSelectedWindow.Sorted = true;
             this.listBoxSelectedWindow.TabIndex = 0;
+            this.listBoxSelectedWindow.SelectedIndexChanged += new System.EventHandler(this.listBoxSelectedWindow_SelectedIndexChanged);
             // 
-            // buttonReload
+            // timerReload
             // 
-            this.buttonReload.Location = new System.Drawing.Point(437, 335);
-            this.buttonReload.Name = "buttonReload";
-            this.buttonReload.Size = new System.Drawing.Size(88, 27);
-            this.buttonReload.TabIndex = 4;
-            this.buttonReload.Text = "^ reload";
-            this.buttonReload.UseVisualStyleBackColor = true;
-            this.buttonReload.Click += new System.EventHandler(this.buttonReload_Click);
+            this.timerReload.Enabled = true;
+            this.timerReload.Interval = 1000;
+            this.timerReload.Tick += new System.EventHandler(this.timerReload_Tick);
             // 
             // MainWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(534, 461);
-            this.Controls.Add(this.buttonReload);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.GroupBox2);
             this.Controls.Add(this.btnResize);
@@ -159,7 +157,7 @@
         internal System.Windows.Forms.Button btnResize;
         internal System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.ListBox listBoxSelectedWindow;
-        private System.Windows.Forms.Button buttonReload;
+        private System.Windows.Forms.Timer timerReload;
     }
 }
 
